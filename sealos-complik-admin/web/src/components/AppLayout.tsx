@@ -5,6 +5,7 @@ import {
   FileCog,
   FileText,
   LayoutGrid,
+  Network,
   ShieldCheck,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -13,6 +14,7 @@ import { cn } from "../lib/utils";
 const navItems = [
   { label: "总览", path: "/overview", icon: LayoutGrid },
   { label: "命名空间详情", path: "/namespaces", icon: ShieldCheck },
+  { label: "入口路径", path: "/discovered-paths", icon: Network },
   { label: "违规中心", path: "/violations", icon: AlertTriangle },
   { label: "项目配置", path: "/configs", icon: FileCog },
   { label: "承诺书管理", path: "/commitments", icon: FileText },

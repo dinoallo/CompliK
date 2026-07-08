@@ -11,6 +11,7 @@ import (
 	"sealos-complik-admin/internal/modules/ban"
 	"sealos-complik-admin/internal/modules/commitment"
 	"sealos-complik-admin/internal/modules/complikviolation"
+	"sealos-complik-admin/internal/modules/discoveredpath"
 	"sealos-complik-admin/internal/modules/procscanviolation"
 	"sealos-complik-admin/internal/modules/projectconfig"
 	"sealos-complik-admin/internal/modules/unban"
@@ -31,6 +32,7 @@ func InitRouter(cfg *config.Config) (*gin.Engine, error) {
 
 	ban.InitBanRoutes(g, cfg)
 	complikviolation.InitRoutes(g)
+	discoveredpath.InitRoutes(g)
 
 	if err := commitment.InitCommitmentRoutes(g, cfg); err != nil {
 		return nil, fmt.Errorf("init commitment routes: %w", err)

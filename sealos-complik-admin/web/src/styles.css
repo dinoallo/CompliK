@@ -632,6 +632,40 @@ table {
   color: inherit;
 }
 
+.discovered-routes-table {
+  min-width: 760px;
+}
+
+.discovered-paths-table {
+  min-width: 900px;
+}
+
+.path-cell {
+  max-width: 320px;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.path-link {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+.path-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.path-link svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
 .empty-state {
   padding: 44px 28px;
   text-align: center;
@@ -719,6 +753,10 @@ table {
   background: rgba(255, 255, 255, 0.98);
   box-shadow: var(--shadow-md);
   padding: 28px;
+}
+
+.path-modal-card {
+  width: min(1120px, 100%);
 }
 
 .drawer-shell {

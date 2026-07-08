@@ -3,6 +3,7 @@ import { AppLayout } from "./components/AppLayout";
 import { BansPage } from "./pages/BansPage";
 import { CommitmentsPage } from "./pages/CommitmentsPage";
 import { ConfigsPage } from "./pages/ConfigsPage";
+import { DiscoveredPathsPage } from "./pages/DiscoveredPathsPage";
 import { NamespaceDetailPage } from "./pages/NamespaceDetailPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { UnbansPage } from "./pages/UnbansPage";
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/namespaces" element={<NamespaceDetailPage />} />
         <Route path="/namespaces/:namespace" element={<NamespaceDetailPage />} />
+        <Route path="/discovered-paths" element={<DiscoveredPathsPage />} />
         <Route path="/violations" element={<ViolationsPage />} />
         <Route path="/configs" element={<ConfigsPage />} />
         <Route path="/commitments" element={<CommitmentsPage />} />

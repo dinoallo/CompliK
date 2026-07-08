@@ -8,6 +8,7 @@ import (
 	"sealos-complik-admin/internal/modules/ban"
 	"sealos-complik-admin/internal/modules/commitment"
 	"sealos-complik-admin/internal/modules/complikviolation"
+	"sealos-complik-admin/internal/modules/discoveredpath"
 	"sealos-complik-admin/internal/modules/procscanviolation"
 	"sealos-complik-admin/internal/modules/projectconfig"
 	"sealos-complik-admin/internal/modules/unban"
@@ -26,6 +27,7 @@ func AutoMigrate(db *gorm.DB) error {
 		{name: "project config", run: projectconfig.AutoMigrate},
 		{name: "commitment", run: commitment.AutoMigrate},
 		{name: "complik violation", run: complikviolation.AutoMigrate},
+		{name: "discovered path", run: discoveredpath.AutoMigrate},
 		{name: "procscan violation", run: procscanviolation.AutoMigrate},
 		{name: "ban", run: ban.AutoMigrate},
 		{name: "unban", run: unban.AutoMigrate},

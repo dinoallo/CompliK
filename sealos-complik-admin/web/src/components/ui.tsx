@@ -221,12 +221,14 @@ export function Modal({
   description,
   children,
   onClose,
+  className,
 }: {
   open: boolean;
   title: string;
   description: string;
   children: ReactNode;
   onClose: () => void;
+  className?: string;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -246,8 +248,8 @@ export function Modal({
   return (
     <>
       <div className="modal-backdrop" onClick={onClose} />
-      <div className="modal-shell">
-        <div className="modal-card">
+      <div className="modal-shell" onClick={onClose}>
+        <div className={cn("modal-card", className)} onClick={(event) => event.stopPropagation()}>
           <div className="modal-header">
             <div>
               <h2 className="panel-title">{title}</h2>

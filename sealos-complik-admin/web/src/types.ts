@@ -135,6 +135,37 @@ export type UnbanRecord = {
   updatedAt: string;
 };
 
+export type DiscoveredRouteRecord = {
+  id: string;
+  namespace: string;
+  ingressName: string;
+  host: string;
+  pathCount: number;
+  totalCount: number;
+  lastSeenAt: string;
+  lastSeenAtMs: number;
+  lastDetectedAt?: string;
+  lastDetectedAtMs?: number;
+};
+
+export type DiscoveredPathRecord = {
+  id: string;
+  apiId: number;
+  namespace: string;
+  ingressName: string;
+  host: string;
+  path: string;
+  count: number;
+  lastSeenAt: string;
+  lastSeenAtMs: number;
+  lastDetectedAt?: string;
+  lastDetectedAtMs?: number;
+  createdAt: string;
+  createdAtMs: number;
+  updatedAt: string;
+  updatedAtMs: number;
+};
+
 export type CreateConfigInput = {
   configName: string;
   configType: string;
@@ -191,10 +222,25 @@ export type PaginatedRecords<T> = {
   totalPages: number;
 };
 
+export type CursorPaginatedRecords<T> = {
+  list: T[];
+  nextCursor?: string;
+  hasMore: boolean;
+};
+
 export type RecordListQuery = {
   page: number;
   keyword?: string;
   operatorName?: string;
+};
+
+export type DiscoveredListQuery = {
+  cursor?: string;
+  limit?: number;
+  keyword?: string;
+  namespace?: string;
+  ingressName?: string;
+  host?: string;
 };
 
 export type AppDataContextValue = {

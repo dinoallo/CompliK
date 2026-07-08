@@ -8,6 +8,10 @@ import type {
   CreateConfigInput,
   UpdateConfigInput,
   CreateUnbanInput,
+  CursorPaginatedRecords,
+  DiscoveredListQuery,
+  DiscoveredPathRecord,
+  DiscoveredRouteRecord,
   PaginatedViolationRecords,
   PaginatedRecords,
   RecordListQuery,
@@ -94,12 +98,41 @@ type ProcscanViolationDto = {
   updated_at?: string;
 };
 
+type DiscoveredRouteDto = {
+  namespace: string;
+  ingress_name: string;
+  host: string;
+  path_count: number;
+  total_count: number;
+  last_seen_at: string;
+  last_detected_at?: string | null;
+};
+
+type DiscoveredPathDto = {
+  id: number;
+  namespace: string;
+  ingress_name: string;
+  host: string;
+  path: string;
+  count: number;
+  last_seen_at: string;
+  last_detected_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type PaginatedDto<T> = {
   list: T[];
   total: number;
   page: number;
   page_size: number;
   total_pages: number;
+};
+
+type CursorPaginatedDto<T> = {
+  list: T[] | null;
+  next_cursor?: string;
+  has_more: boolean;
 };
 
 function toPaginatedRecords<TDto, TRecord>(
@@ -128,6 +161,40 @@ function buildRecordListParams(query: RecordListQuery) {
   const operatorName = query.operatorName?.trim();
   if (operatorName) {
     params.set("operator_name", operatorName);
+  }
+
+  return params;
+}
+
+function buildDiscoveredListParams(query: DiscoveredListQuery) {
+  const params = new URLSearchParams();
+
+  if (query.cursor) {
+    params.set("cursor", query.cursor);
+  }
+
+  if (query.limit) {
+    params.set("limit", String(query.limit));
+  }
+
+  const keyword = query.keyword?.trim();
+  if (keyword) {
+    params.set("keyword", keyword);
+  }
+
+  const namespace = query.namespace?.trim();
+  if (namespace) {
+    params.set("namespace", namespace);
+  }
+
+  const ingressName = query.ingressName?.trim();
+  if (ingressName) {
+    params.set("ingress_name", ingressName);
+  }
+
+  const host = query.host?.trim();
+  if (host) {
+    params.set("host", host);
   }
 
   return params;
@@ -313,6 +380,46 @@ function toProcscanViolationRecord(item: ProcscanViolationDto): ViolationRecord 
     createdAtMs: item.created_at ? new Date(item.created_at).getTime() : undefined,
     updatedAt: item.updated_at ? formatDateTime(item.updated_at) : undefined,
     updatedAtMs: item.updated_at ? new Date(item.updated_at).getTime() : undefined,
+  };
+}
+
+function toDiscoveredRouteRecord(item: DiscoveredRouteDto): DiscoveredRouteRecord {
+  const id = `${item.namespace}|${item.ingress_name}|${item.host}`;
+  const lastDetectedAtMs = item.last_detected_at ? new Date(item.last_detected_at).getTime() : undefined;
+
+  return {
+    id,
+    namespace: item.namespace,
+    ingressName: item.ingress_name,
+    host: item.host,
+    pathCount: item.path_count,
+    totalCount: item.total_count,
+    lastSeenAt: formatDateTime(item.last_seen_at),
+    lastSeenAtMs: new Date(item.last_seen_at).getTime(),
+    lastDetectedAt: item.last_detected_at ? formatDateTime(item.last_detected_at) : undefined,
+    lastDetectedAtMs,
+  };
+}
+
+function toDiscoveredPathRecord(item: DiscoveredPathDto): DiscoveredPathRecord {
+  const lastDetectedAtMs = item.last_detected_at ? new Date(item.last_detected_at).getTime() : undefined;
+
+  return {
+    id: `discovered-path-${item.id}`,
+    apiId: item.id,
+    namespace: item.namespace,
+    ingressName: item.ingress_name,
+    host: item.host,
+    path: item.path,
+    count: item.count,
+    lastSeenAt: formatDateTime(item.last_seen_at),
+    lastSeenAtMs: new Date(item.last_seen_at).getTime(),
+    lastDetectedAt: item.last_detected_at ? formatDateTime(item.last_detected_at) : undefined,
+    lastDetectedAtMs,
+    createdAt: formatDateTime(item.created_at),
+    createdAtMs: new Date(item.created_at).getTime(),
+    updatedAt: formatDateTime(item.updated_at),
+    updatedAtMs: new Date(item.updated_at).getTime(),
   };
 }
 
@@ -541,6 +648,44 @@ export async function listViolationRecordsPage(query: ViolationListQuery): Promi
 export async function deleteViolationRecord(id: number, type: ViolationRecord["type"]) {
   const path = type === "complik" ? "/api/complik-violations" : "/api/procscan-violations";
   await request(`${path}/id/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listDiscoveredRoutes(
+  query: DiscoveredListQuery,
+): Promise<CursorPaginatedRecords<DiscoveredRouteRecord>> {
+  const data = await request<CursorPaginatedDto<DiscoveredRouteDto>>(
+    `/api/discovered-routes?${buildDiscoveredListParams(query).toString()}`,
+  );
+
+  const list = data.list ?? [];
+
+  return {
+    list: list.map(toDiscoveredRouteRecord),
+    nextCursor: data.next_cursor,
+    hasMore: data.has_more,
+  };
+}
+
+export async function listDiscoveredPaths(
+  query: DiscoveredListQuery,
+): Promise<CursorPaginatedRecords<DiscoveredPathRecord>> {
+  const data = await request<CursorPaginatedDto<DiscoveredPathDto>>(
+    `/api/discovered-paths?${buildDiscoveredListParams(query).toString()}`,
+  );
+
+  const list = data.list ?? [];
+
+  return {
+    list: list.map(toDiscoveredPathRecord),
+    nextCursor: data.next_cursor,
+    hasMore: data.has_more,
+  };
+}
+
+export async function deleteDiscoveredPathRecord(id: number) {
+  await request(`/api/discovered-paths/id/${id}`, {
     method: "DELETE",
   });
 }
