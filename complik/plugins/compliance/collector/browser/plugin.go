@@ -237,6 +237,7 @@ func (p *BrowserPlugin) Start(
 							result = &models.CollectorInfo{
 								DiscoveryName:    ingress.DiscoveryName,
 								CollectorName:    p.Name(),
+								ReviewTaskID:     ingress.ReviewTaskID,
 								Name:             ingress.Name,
 								Namespace:        ingress.Namespace,
 								Host:             ingress.Host,

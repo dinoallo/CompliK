@@ -55,6 +55,22 @@ data:
             "maxWorkers": {{ .Values.plugins.browser.maxWorkers }},
             "profiles": {{ .Values.plugins.browser.profiles | toJson }}
           }
+      - name: "PageReviewWorker"
+        type: "Compliance"
+        enabled: {{ .Values.plugins.pageReviewWorker.enabled }}
+        settings: |
+          {
+            "adminBaseURL": {{ .Values.external.admin.baseURL | quote }},
+            "adminTimeoutSecond": {{ .Values.plugins.pageReviewWorker.adminTimeoutSecond }},
+            "pollIntervalSecond": {{ .Values.plugins.pageReviewWorker.pollIntervalSecond }},
+            "reviewTimeoutSecond": {{ .Values.plugins.pageReviewWorker.reviewTimeoutSecond }},
+            "leaseDurationSecond": {{ .Values.plugins.pageReviewWorker.leaseDurationSecond }},
+            "initialDelaySecond": {{ .Values.plugins.pageReviewWorker.initialDelaySecond }},
+            "batchSize": {{ .Values.plugins.pageReviewWorker.batchSize }},
+            "maxWorkers": {{ .Values.plugins.pageReviewWorker.maxWorkers }},
+            "adminBasicAuthUsername": "${ADMIN_BASIC_AUTH_USERNAME}",
+            "adminBasicAuthPassword": "${ADMIN_BASIC_AUTH_PASSWORD}"
+          }
       - name: "Safety"
         type: "Compliance"
         enabled: {{ .Values.plugins.safety.enabled }}

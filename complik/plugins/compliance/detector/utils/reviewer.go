@@ -489,6 +489,7 @@ func (r *ContentReviewer) parseResponse(
 		DiscoveryName: content.DiscoveryName,
 		CollectorName: content.CollectorName,
 		DetectorName:  name,
+		ReviewTaskID:  content.ReviewTaskID,
 		Name:          content.Name,
 		Namespace:     content.Namespace,
 		Host:          content.Host,

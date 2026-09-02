@@ -52,6 +52,23 @@ plugins:
         "profiles": ["desktop", "mobile"]
       }
 
+  - name: "PageReviewWorker"
+    type: "Compliance"
+    enabled: true
+    settings: |
+      {
+        "adminBaseURL": "http://sealos-complik-admin:8080",
+        "adminTimeoutSecond": 10,
+        "pollIntervalSecond": 5,
+        "reviewTimeoutSecond": 180,
+        "leaseDurationSecond": 240,
+        "initialDelaySecond": 10,
+        "batchSize": 10,
+        "maxWorkers": 10,
+        "adminBasicAuthUsername": "${ADMIN_BASIC_AUTH_USERNAME}",
+        "adminBasicAuthPassword": "${ADMIN_BASIC_AUTH_PASSWORD}"
+      }
+
   - name: "Safety"
     type: "Compliance"
     enabled: true
