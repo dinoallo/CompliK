@@ -78,6 +78,16 @@ plugins:
       - desktop
       - mobile
 
+  pageReviewWorker:
+    enabled: true
+    adminTimeoutSecond: 10
+    pollIntervalSecond: 5
+    reviewTimeoutSecond: 180
+    leaseDurationSecond: 240
+    initialDelaySecond: 10
+    batchSize: 10
+    maxWorkers: 10
+
   safety:
     enabled: true
     maxWorkers: 20

@@ -16,12 +16,14 @@ package models
 
 type DiscoveryInfo struct {
 	DiscoveryName string `json:"discovery_name"`
+	ReviewTaskID  string `json:"review_task_id,omitempty"`
 
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
 
 	Host string   `json:"host"`
 	Path []string `json:"path"`
+	URL  string   `json:"url,omitempty"`
 
 	ServiceName string `json:"service_name"`
 

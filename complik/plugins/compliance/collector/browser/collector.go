@@ -125,6 +125,7 @@ func (s *Collector) CollectorAndScreenshot(
 		return &models.CollectorInfo{
 			DiscoveryName: discovery.DiscoveryName,
 			CollectorName: name,
+			ReviewTaskID:  discovery.ReviewTaskID,
 			Name:          discovery.Name,
 			Namespace:     discovery.Namespace,
 			Host:          discovery.Host,
@@ -187,6 +188,7 @@ func (s *Collector) CollectorAndScreenshot(
 				return &models.CollectorInfo{
 					DiscoveryName: discovery.DiscoveryName,
 					CollectorName: name,
+					ReviewTaskID:  discovery.ReviewTaskID,
 					Name:          discovery.Name,
 					Namespace:     discovery.Namespace,
 					Host:          discovery.Host,
@@ -226,6 +228,7 @@ func (s *Collector) CollectorAndScreenshot(
 		return &models.CollectorInfo{
 			DiscoveryName: discovery.DiscoveryName,
 			CollectorName: name,
+			ReviewTaskID:  discovery.ReviewTaskID,
 			Name:          discovery.Name,
 			Namespace:     discovery.Namespace,
 			Host:          discovery.Host,
@@ -264,6 +267,7 @@ func (s *Collector) CollectorAndScreenshot(
 	return &models.CollectorInfo{
 		DiscoveryName: discovery.DiscoveryName,
 		CollectorName: name,
+		ReviewTaskID:  discovery.ReviewTaskID,
 		Name:          discovery.Name,
 		Namespace:     discovery.Namespace,
 		Host:          discovery.Host,
@@ -278,6 +282,10 @@ func (s *Collector) CollectorAndScreenshot(
 }
 
 func (s *Collector) formatURL(ingress models.DiscoveryInfo) string {
+	if strings.TrimSpace(ingress.URL) != "" {
+		return strings.TrimSpace(ingress.URL)
+	}
+
 	host := ingress.Host
 	if host == "" {
 		return ""

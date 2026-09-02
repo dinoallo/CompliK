@@ -16,6 +16,7 @@ Administrative backend service for managing project configuration and user compl
 - Ban screenshot upload and admin-side proxy preview
 - Markdown-ready ban reason storage and rendering support
 - Namespace status endpoints for bans and violations
+- Durable, coalesced page review task queue for traffic-triggered scans
 - YAML-based configuration, OSS integration, and file logging
 - Docker image for containerized deployment
 
@@ -39,6 +40,7 @@ Administrative backend service for managing project configuration and user compl
 |   |   |-- ban/
 |   |   |-- complikviolation/
 |   |   |-- commitment/
+|   |   |-- pagereviewtask/
 |   |   |-- procscanviolation/
 |   |   |-- projectconfig/
 |   |   |-- unban/
@@ -53,6 +55,7 @@ Administrative backend service for managing project configuration and user compl
 - `projectconfig`: store and manage project-level configuration records
 - `commitment`: manage uploaded commitment files and download streaming
 - `complikviolation`: store and query CompliK content violation events
+- `pagereviewtask`: coalesce and lease traffic-triggered page review tasks
 - `procscanviolation`: store and query Procscan process violation events
 - `ban`: manage ban history, markdown reasons, screenshot upload, and screenshot proxy preview
 - `unban`: track unban actions
@@ -159,6 +162,10 @@ If MySQL is not running inside the same network as the container, update `config
 | `GET` | `/api/commitments/:namespace/download` | Download commitment file |
 | `PUT` | `/api/commitments/:namespace` | Update commitment |
 | `DELETE` | `/api/commitments/:namespace` | Delete commitment |
+| `POST` | `/api/page-review-tasks` | Enqueue and coalesce traffic-triggered page review tasks |
+| `POST` | `/api/page-review-tasks/claim` | Claim pending page review tasks with a lease |
+| `POST` | `/api/page-review-tasks/:id/complete` | Complete a leased page review task |
+| `POST` | `/api/page-review-tasks/:id/fail` | Retry or permanently fail a leased page review task |
 | `POST` | `/api/complik-violations` | Create CompliK violation event |
 | `GET` | `/api/complik-violations` | List CompliK illegal events, `include_all=true` returns all events; `page`, `keyword`, and `time_range` return paginated results |
 | `GET` | `/api/complik-violations/:namespace` | Get CompliK events by namespace |
@@ -282,6 +289,7 @@ Import `test/postman.json` into Postman to quickly try the available APIs.
 - 支持封禁截图上传与 admin 代理预览
 - 支持封禁原因以 Markdown 形式存储与展示
 - 提供 namespace 维度的封禁状态与违规状态查询接口
+- 提供可持久化、合并后的流量触发页面审查任务队列
 - 使用 YAML 配置文件、OSS 和本地日志目录
 - 提供 Docker 镜像构建能力，便于容器化部署
 
@@ -305,6 +313,7 @@ Import `test/postman.json` into Postman to quickly try the available APIs.
 |   |   |-- ban/
 |   |   |-- complikviolation/
 |   |   |-- commitment/
+|   |   |-- pagereviewtask/
 |   |   |-- procscanviolation/
 |   |   |-- projectconfig/
 |   |   |-- unban/
@@ -320,6 +329,7 @@ Import `test/postman.json` into Postman to quickly try the available APIs.
 - `projectconfig`：管理项目级配置项
 - `commitment`：管理承诺书文件上传和下载流
 - `complikviolation`：记录和查询 CompliK 内容违规事件
+- `pagereviewtask`：合并并租约化管理流量触发的页面审查任务
 - `procscanviolation`：记录和查询 Procscan 进程违规事件
 - `violation`：保留兼容用的通用违规接口
 - `ban`：管理封禁历史、Markdown 描述、截图上传和截图代理预览

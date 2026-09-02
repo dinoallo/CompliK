@@ -29,6 +29,7 @@ type DetectorInfo struct {
 	DiscoveryName string `json:"discovery_name"`
 	CollectorName string `json:"collector_name"`
 	DetectorName  string `json:"detector_name"`
+	ReviewTaskID  string `json:"review_task_id,omitempty"`
 
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`

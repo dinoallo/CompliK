@@ -24,6 +24,7 @@ import (
 	_ "github.com/bearslyricattack/CompliK/complik/plugins/compliance/collector/browser"
 	_ "github.com/bearslyricattack/CompliK/complik/plugins/compliance/detector/custom"
 	_ "github.com/bearslyricattack/CompliK/complik/plugins/compliance/detector/safety"
+	_ "github.com/bearslyricattack/CompliK/complik/plugins/compliance/worker/pagereview"
 	_ "github.com/bearslyricattack/CompliK/complik/plugins/discovery/cronjob/complete"
 	_ "github.com/bearslyricattack/CompliK/complik/plugins/discovery/cronjob/devbox"
 	_ "github.com/bearslyricattack/CompliK/complik/plugins/discovery/informer/deployment"

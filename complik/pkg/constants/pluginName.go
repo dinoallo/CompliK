@@ -27,6 +27,7 @@ const (
 
 const (
 	ComplianceCollectorHigressName = "Higress"
+	CompliancePageReviewWorkerName = "PageReviewWorker"
 	ComplianceCollectorBrowserName = "Browser"
 	ComplianceDetectorCustom       = "Custom"
 	ComplianceDetectorSafety       = "Safety"
