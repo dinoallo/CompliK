@@ -12,9 +12,28 @@ import (
 
 type TaskRepository interface {
 	Enqueue(ctx context.Context, task *PageReviewTask, now time.Time) (*PageReviewTask, bool, error)
-	Claim(ctx context.Context, workerID string, limit int, leaseDuration time.Duration, now time.Time) ([]PageReviewTask, error)
-	Complete(ctx context.Context, id uint64, workerID string, now time.Time, cooldown time.Duration) error
-	Fail(ctx context.Context, id uint64, workerID string, message string, retryable bool, now time.Time) error
+	Claim(
+		ctx context.Context,
+		workerID string,
+		limit int,
+		leaseDuration time.Duration,
+		now time.Time,
+	) ([]PageReviewTask, error)
+	Complete(
+		ctx context.Context,
+		id uint64,
+		workerID string,
+		now time.Time,
+		cooldown time.Duration,
+	) error
+	Fail(
+		ctx context.Context,
+		id uint64,
+		workerID string,
+		message string,
+		retryable bool,
+		now time.Time,
+	) error
 }
 
 type Repository struct {
@@ -35,12 +54,15 @@ func (r *Repository) Enqueue(
 	}
 
 	var result PageReviewTask
+
 	queued := false
-	for attempt := 0; attempt < 2; attempt++ {
+	for range 2 {
 		result = PageReviewTask{}
 		queued = false
+
 		err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 			var existing PageReviewTask
+
 			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 				Where("task_key = ?", task.TaskKey).
 				First(&existing).Error
@@ -51,8 +73,10 @@ func (r *Repository) Enqueue(
 
 				result = *task
 				queued = true
+
 				return nil
 			}
+
 			if err != nil {
 				return err
 			}
@@ -68,6 +92,7 @@ func (r *Repository) Enqueue(
 
 				result.URL = task.URL
 				result.ObservedAt = task.ObservedAt
+
 				return nil
 			}
 
@@ -99,12 +124,13 @@ func (r *Repository) Enqueue(
 			result.NextRunAt = &nextRunAt
 			result.LastError = ""
 			queued = true
+
 			return nil
 		})
-
 		if err == nil {
 			return &result, queued, nil
 		}
+
 		if !isDuplicateKeyError(err) {
 			return nil, false, err
 		}
@@ -121,6 +147,7 @@ func (r *Repository) Claim(
 	now time.Time,
 ) ([]PageReviewTask, error) {
 	var tasks []PageReviewTask
+
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&PageReviewTask{}).
 			Where("status = ? AND lease_until IS NOT NULL AND lease_until < ?", StatusRunning, now).
@@ -172,6 +199,7 @@ func (r *Repository) Complete(
 	cooldown time.Duration,
 ) error {
 	nextRunAt := now.Add(cooldown)
+
 	result := r.db.WithContext(ctx).Model(&PageReviewTask{}).
 		Where("id = ? AND status = ? AND lease_owner = ?", id, StatusRunning, workerID).
 		Updates(map[string]any{
@@ -184,14 +212,17 @@ func (r *Repository) Complete(
 	if result.Error != nil {
 		return result.Error
 	}
+
 	if result.RowsAffected > 0 {
 		return nil
 	}
 
 	var existing PageReviewTask
+
 	if err := r.db.WithContext(ctx).First(&existing, id).Error; err != nil {
 		return err
 	}
+
 	if existing.Status == StatusSucceeded {
 		return nil
 	}
@@ -216,16 +247,20 @@ func (r *Repository) Fail(
 			if currentErr := r.db.WithContext(ctx).First(&current, id).Error; currentErr != nil {
 				return currentErr
 			}
+
 			if current.Status == StatusSucceeded || current.Status == StatusFailed {
 				return nil
 			}
+
 			return ErrPageReviewTaskLeaseLost
 		}
+
 		return err
 	}
 
 	nextStatus := StatusFailed
 	next := now.Add(defaultTaskCooldown)
+
 	nextRunAt := &next
 	if retryable && existing.Attempts < existing.MaxAttempts {
 		nextStatus = StatusPending
@@ -245,14 +280,17 @@ func (r *Repository) Fail(
 	if result.Error != nil {
 		return result.Error
 	}
+
 	if result.RowsAffected > 0 {
 		return nil
 	}
 
 	var current PageReviewTask
+
 	if err := r.db.WithContext(ctx).First(&current, id).Error; err != nil {
 		return err
 	}
+
 	if current.Status == StatusSucceeded || current.Status == StatusFailed {
 		return nil
 	}

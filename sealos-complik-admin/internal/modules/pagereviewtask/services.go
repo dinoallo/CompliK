@@ -48,6 +48,7 @@ func (s *Service) Enqueue(
 	}
 
 	now := time.Now().UTC()
+
 	results := make([]EnqueueResult, 0, len(req.Items))
 	for _, item := range req.Items {
 		task, err := normalizeTask(item, now)
@@ -79,13 +80,17 @@ func (s *Service) Claim(
 	if limit <= 0 {
 		limit = defaultClaimLimit
 	}
+
 	if limit > maxClaimLimit {
 		return nil, ErrPageReviewTaskInvalidInput
 	}
+
 	leaseSecond := req.LeaseDurationSecond
+
 	if leaseSecond <= 0 {
 		leaseSecond = 180
 	}
+
 	if leaseSecond < 10 || leaseSecond > 3600 {
 		return nil, ErrPageReviewTaskInvalidInput
 	}
@@ -141,6 +146,7 @@ func (s *Service) Fail(ctx context.Context, id uint64, req FailTaskRequest) erro
 func normalizeTask(item EnqueueItem, now time.Time) (*PageReviewTask, error) {
 	namespace := strings.TrimSpace(item.Namespace)
 	ingressName := strings.TrimSpace(item.IngressName)
+
 	host := normalizeHost(item.Host)
 	if namespace == "" || ingressName == "" || host == "" || strings.ContainsAny(host, "/?#") {
 		return nil, ErrPageReviewTaskInvalidInput
@@ -214,6 +220,7 @@ func normalizePath(raw string) (string, error) {
 		if before, _, found := strings.Cut(pathValue, "#"); found {
 			pathValue = before
 		}
+
 		if before, _, found := strings.Cut(pathValue, "?"); found {
 			pathValue = before
 		}
@@ -227,12 +234,15 @@ func normalizePath(raw string) (string, error) {
 	if pathValue == "" {
 		pathValue = "/"
 	}
+
 	if !strings.HasPrefix(pathValue, "/") {
 		pathValue = "/" + pathValue
 	}
+
 	if len(pathValue) > 1 {
 		pathValue = strings.TrimRight(pathValue, "/")
 	}
+
 	if len(pathValue) > maxPathLength {
 		return "", ErrPageReviewTaskInvalidInput
 	}
@@ -271,16 +281,19 @@ func normalizeTaskURL(rawURL, host, path string) (string, error) {
 func collapseSlashes(value string) string {
 	var builder strings.Builder
 	builder.Grow(len(value))
+
 	lastSlash := false
 	for _, char := range value {
 		if char == '/' {
 			if lastSlash {
 				continue
 			}
+
 			lastSlash = true
 		} else {
 			lastSlash = false
 		}
+
 		builder.WriteRune(char)
 	}
 

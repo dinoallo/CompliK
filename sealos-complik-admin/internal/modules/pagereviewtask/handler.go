@@ -19,7 +19,11 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) Enqueue(c *gin.Context) {
 	var req EnqueueRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid request body", "error": err.Error()})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"message": "invalid request body", "error": err.Error()},
+		)
+
 		return
 	}
 
@@ -35,6 +39,7 @@ func (h *Handler) Enqueue(c *gin.Context) {
 		if result.Queued {
 			response.Queued++
 		}
+
 		response.Tasks = append(response.Tasks, toTaskResponse(result.Task))
 	}
 
@@ -44,7 +49,11 @@ func (h *Handler) Enqueue(c *gin.Context) {
 func (h *Handler) Claim(c *gin.Context) {
 	var req ClaimRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid request body", "error": err.Error()})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"message": "invalid request body", "error": err.Error()},
+		)
+
 		return
 	}
 
@@ -71,7 +80,11 @@ func (h *Handler) Complete(c *gin.Context) {
 
 	var req TaskLifecycleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid request body", "error": err.Error()})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"message": "invalid request body", "error": err.Error()},
+		)
+
 		return
 	}
 
@@ -92,7 +105,11 @@ func (h *Handler) Fail(c *gin.Context) {
 
 	var req FailTaskRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid request body", "error": err.Error()})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"message": "invalid request body", "error": err.Error()},
+		)
+
 		return
 	}
 
@@ -113,7 +130,10 @@ func (h *Handler) respondWithServiceError(c *gin.Context, err error, fallbackMes
 	case errors.Is(err, ErrPageReviewTaskLeaseLost):
 		c.JSON(http.StatusConflict, gin.H{"message": err.Error()})
 	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"message": fallbackMessage, "error": err.Error()})
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"message": fallbackMessage, "error": err.Error()},
+		)
 	}
 }
 
