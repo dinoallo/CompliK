@@ -53,8 +53,8 @@ type Plugin struct {
 	config workerConfig
 	client *http.Client
 
-	ctx    context.Context
 	cancel context.CancelFunc
+	done   <-chan struct{}
 	wg     sync.WaitGroup
 
 	mu      sync.Mutex
@@ -123,13 +123,19 @@ func (p *Plugin) Start(
 		return err
 	}
 
-	p.ctx, p.cancel = context.WithCancel(context.Background())
+	workerCtx, cancel := context.WithCancel(ctx)
+	p.cancel = cancel
+	p.done = workerCtx.Done()
+
+	defer cancel()
+
 	p.client = &http.Client{Timeout: time.Duration(p.config.AdminTimeoutSecond) * time.Second}
 	p.pending = make(map[uint64]chan struct{})
 	workerID := newWorkerID()
 	detectorEvents := eventBus.Subscribe(constants.DetectorTopic)
 
 	p.wg.Add(1)
+
 	go p.consumeDetectorEvents(detectorEvents)
 
 	p.log.Info("Page review worker started", logger.Fields{
@@ -147,26 +153,24 @@ func (p *Plugin) Start(
 	if p.config.InitialDelaySecond > 0 {
 		select {
 		case <-time.After(time.Duration(p.config.InitialDelaySecond) * time.Second):
-		case <-p.ctx.Done():
+		case <-workerCtx.Done():
 			return nil
 		}
 	}
 
 	semaphore := make(chan struct{}, p.config.MaxWorkers)
+
 	poll := time.NewTicker(time.Duration(p.config.PollIntervalSecond) * time.Second)
 	defer poll.Stop()
 
 	for {
-		if err := p.claimAndStart(p.ctx, workerID, semaphore, eventBus); err != nil {
+		if err := p.claimAndStart(workerCtx, workerID, semaphore, eventBus); err != nil {
 			p.log.Warn("Failed to poll page review tasks", logger.Fields{"error": err.Error()})
 		}
 
 		select {
 		case <-poll.C:
-		case <-p.ctx.Done():
-			return nil
-		case <-ctx.Done():
-			p.cancel()
+		case <-workerCtx.Done():
 			return nil
 		}
 	}
@@ -178,6 +182,7 @@ func (p *Plugin) Stop(ctx context.Context) error {
 	}
 
 	p.cancel()
+
 	done := make(chan struct{})
 	go func() {
 		p.wg.Wait()
@@ -219,26 +224,34 @@ func (p *Plugin) loadConfig(setting string) error {
 		if err != nil {
 			return fmt.Errorf("resolve admin base url: %w", err)
 		}
+
 		p.config.AdminBaseURL = resolved
 	}
+
 	if parsed.AdminTimeoutSecond > 0 {
 		p.config.AdminTimeoutSecond = parsed.AdminTimeoutSecond
 	}
+
 	if parsed.PollIntervalSecond > 0 {
 		p.config.PollIntervalSecond = parsed.PollIntervalSecond
 	}
+
 	if parsed.ReviewTimeoutSecond > 0 {
 		p.config.ReviewTimeoutSecond = parsed.ReviewTimeoutSecond
 	}
+
 	if parsed.LeaseDurationSecond > 0 {
 		p.config.LeaseDurationSecond = parsed.LeaseDurationSecond
 	}
+
 	if parsed.InitialDelaySecond > 0 {
 		p.config.InitialDelaySecond = parsed.InitialDelaySecond
 	}
+
 	if parsed.BatchSize > 0 {
 		p.config.BatchSize = parsed.BatchSize
 	}
+
 	if parsed.MaxWorkers > 0 {
 		p.config.MaxWorkers = parsed.MaxWorkers
 	}
@@ -251,6 +264,7 @@ func (p *Plugin) loadConfig(setting string) error {
 	}
 
 	p.applyAuth(parsed)
+
 	return nil
 }
 
@@ -273,10 +287,9 @@ func (p *Plugin) claimAndStart(
 	if available <= 0 {
 		return nil
 	}
+
 	limit := p.config.BatchSize
-	if limit > available {
-		limit = available
-	}
+	limit = min(limit, available)
 
 	tasks, err := p.claim(ctx, workerID, limit)
 	if err != nil {
@@ -285,10 +298,13 @@ func (p *Plugin) claimAndStart(
 
 	for _, task := range tasks {
 		semaphore <- struct{}{}
+
 		p.wg.Add(1)
+
 		go func(task taskResponse) {
 			defer p.wg.Done()
 			defer func() { <-semaphore }()
+
 			p.processTask(ctx, workerID, task, eventBus)
 		}(task)
 	}
@@ -303,9 +319,11 @@ func (p *Plugin) processTask(
 	eventBus *eventbus.EventBus,
 ) {
 	result := make(chan struct{}, 1)
+
 	p.mu.Lock()
 	p.pending[task.ID] = result
 	p.mu.Unlock()
+
 	defer func() {
 		p.mu.Lock()
 		delete(p.pending, task.ID)
@@ -324,7 +342,10 @@ func (p *Plugin) processTask(
 		PodCount:      1,
 	}})
 
-	taskCtx, cancel := context.WithTimeout(ctx, time.Duration(p.config.ReviewTimeoutSecond)*time.Second)
+	taskCtx, cancel := context.WithTimeout(
+		ctx,
+		time.Duration(p.config.ReviewTimeoutSecond)*time.Second,
+	)
 	defer cancel()
 
 	select {
@@ -336,7 +357,13 @@ func (p *Plugin) processTask(
 			})
 		}
 	case <-taskCtx.Done():
-		if err := p.fail(ctx, workerID, task.ID, "review timed out waiting for detector result", true); err != nil {
+		if err := p.fail(
+			ctx,
+			workerID,
+			task.ID,
+			"review timed out waiting for detector result",
+			true,
+		); err != nil {
 			p.log.Error("Failed to record page review timeout", logger.Fields{
 				"task_id": task.ID,
 				"error":   err.Error(),
@@ -347,6 +374,7 @@ func (p *Plugin) processTask(
 
 func (p *Plugin) consumeDetectorEvents(subscribe eventbus.EventChan) {
 	defer p.wg.Done()
+
 	for {
 		select {
 		case event, ok := <-subscribe:
@@ -370,6 +398,7 @@ func (p *Plugin) consumeDetectorEvents(subscribe eventbus.EventChan) {
 			p.mu.Lock()
 			resultCh := p.pending[taskID]
 			p.mu.Unlock()
+
 			if resultCh == nil {
 				continue
 			}
@@ -378,7 +407,7 @@ func (p *Plugin) consumeDetectorEvents(subscribe eventbus.EventChan) {
 			case resultCh <- struct{}{}:
 			default:
 			}
-		case <-p.ctx.Done():
+		case <-p.done:
 			return
 		}
 	}
@@ -408,7 +437,13 @@ func (p *Plugin) complete(ctx context.Context, workerID string, taskID uint64) e
 	)
 }
 
-func (p *Plugin) fail(ctx context.Context, workerID string, taskID uint64, message string, retryable bool) error {
+func (p *Plugin) fail(
+	ctx context.Context,
+	workerID string,
+	taskID uint64,
+	message string,
+	retryable bool,
+) error {
 	return p.postJSON(
 		ctx,
 		fmt.Sprintf("/api/page-review-tasks/%d/fail", taskID),
@@ -417,13 +452,16 @@ func (p *Plugin) fail(ctx context.Context, workerID string, taskID uint64, messa
 	)
 }
 
-func (p *Plugin) postJSON(ctx context.Context, path string, payload any, response any) error {
+func (p *Plugin) postJSON(ctx context.Context, path string, payload, response any) error {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal page review request: %w", err)
 	}
 
-	requestCtx, cancel := context.WithTimeout(ctx, time.Duration(p.config.AdminTimeoutSecond)*time.Second)
+	requestCtx, cancel := context.WithTimeout(
+		ctx,
+		time.Duration(p.config.AdminTimeoutSecond)*time.Second,
+	)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(
@@ -435,7 +473,9 @@ func (p *Plugin) postJSON(ctx context.Context, path string, payload any, respons
 	if err != nil {
 		return fmt.Errorf("create page review request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", "application/json")
+
 	config.AdminBasicAuth{
 		Username: p.config.AdminBasicAuthUsername,
 		Password: p.config.AdminBasicAuthPassword,
@@ -445,14 +485,20 @@ func (p *Plugin) postJSON(ctx context.Context, path string, payload any, respons
 	if err != nil {
 		return fmt.Errorf("send page review request: %w", err)
 	}
+
 	defer func() { _ = resp.Body.Close() }()
 
 	responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return fmt.Errorf("read page review response: %w", err)
 	}
+
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf("page review api returned %d: %s", resp.StatusCode, strings.TrimSpace(string(responseBody)))
+		return fmt.Errorf(
+			"page review api returned %d: %s",
+			resp.StatusCode,
+			strings.TrimSpace(string(responseBody)),
+		)
 	}
 
 	if response != nil && len(responseBody) > 0 {
