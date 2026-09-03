@@ -7,14 +7,14 @@ type EnqueueRequest struct {
 }
 
 type EnqueueItem struct {
-	Namespace      string    `json:"namespace" binding:"required,max=255"`
-	IngressName    string    `json:"ingress_name" binding:"required,max=255"`
-	Host           string    `json:"host" binding:"required,max=255"`
-	Path           string    `json:"path" binding:"max=2048"`
-	URL            string    `json:"url" binding:"max=2048"`
+	Namespace      string    `json:"namespace"       binding:"required,max=255"`
+	IngressName    string    `json:"ingress_name"    binding:"required,max=255"`
+	Host           string    `json:"host"            binding:"required,max=255"`
+	Path           string    `json:"path"            binding:"max=2048"`
+	URL            string    `json:"url"             binding:"max=2048"`
 	ObservedAt     time.Time `json:"observed_at"`
 	ContentVersion string    `json:"content_version" binding:"max=255"`
-	PolicyVersion  string    `json:"policy_version" binding:"max=255"`
+	PolicyVersion  string    `json:"policy_version"  binding:"max=255"`
 }
 
 type EnqueueResponse struct {
@@ -24,8 +24,8 @@ type EnqueueResponse struct {
 }
 
 type ClaimRequest struct {
-	WorkerID            string `json:"worker_id" binding:"required,max=255"`
-	Limit               int    `json:"limit" binding:"omitempty,min=1,max=100"`
+	WorkerID            string `json:"worker_id"             binding:"required,max=255"`
+	Limit               int    `json:"limit"                 binding:"omitempty,min=1,max=100"`
 	LeaseDurationSecond int    `json:"lease_duration_second" binding:"omitempty,min=10,max=3600"`
 }
 
@@ -39,7 +39,7 @@ type TaskLifecycleRequest struct {
 
 type FailTaskRequest struct {
 	WorkerID  string `json:"worker_id" binding:"required,max=255"`
-	Error     string `json:"error" binding:"max=4096"`
+	Error     string `json:"error"     binding:"max=4096"`
 	Retryable *bool  `json:"retryable"`
 }
 
