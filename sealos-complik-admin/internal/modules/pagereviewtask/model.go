@@ -18,7 +18,7 @@ const (
 type PageReviewTask struct {
 	ID             uint64     `gorm:"primaryKey;autoIncrement"                                                                                               json:"id"`
 	TaskKey        string     `gorm:"column:task_key;size:64;not null;uniqueIndex:uk_page_review_tasks_task_key"                                             json:"task_key"`
-	RouteKey       string     `gorm:"column:route_key;size:2048;not null;index:idx_page_review_tasks_route_status,priority:1"                                json:"route_key"`
+	RouteKey       string     `gorm:"column:route_key;size:2048;not null;index:idx_page_review_tasks_route_status,priority:1,length:512" json:"route_key"`
 	Namespace      string     `gorm:"size:255;not null"                                                                                                      json:"namespace"`
 	IngressName    string     `gorm:"column:ingress_name;size:255;not null"                                                                                  json:"ingress_name"`
 	Host           string     `gorm:"size:255;not null"                                                                                                      json:"host"`
